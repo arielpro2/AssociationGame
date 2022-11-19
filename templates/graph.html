@@ -1,77 +1,103 @@
 <!DOCTYPE html>
 <html>
-<!--     Fonts and icons     -->
-<link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons" />
-<link rel="stylesheet" type="text/css" href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700" />
-<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/latest/css/font-awesome.min.css" />
-<!-- CSS Files -->
-<link href="{{url_for('static', filename='css/bootstrap.min.css')}}" rel="stylesheet" />
-<link href="{{url_for('static', filename='css/material-kit.css')}}" rel="stylesheet"/>
-<link href="{{url_for('static', filename='css/demo.css')}}" rel="stylesheet"/>
-<style>
-  #network-graph {
-    top: 0;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    position: absolute;
-  }
-</style>
-<!-- Scripts -->
-<div style="background-color: #FFFFFF;" id="network-graph"></div>
-<script src="{{url_for('static', filename='js/sigma.min.js')}}" type="text/javascript"></script>
-<script src="{{url_for('static', filename='js/sigma.layout.forceAtlas2.min.js')}}" type="text/javascript"></script>
-
-<script>
-var data = ({{json_data|safe}});
-console.log(data);
-
-s = new sigma({
-        graph: data,
-        container: 'network-graph',
-        settings: {
-            defaultLabelColor: '#fff'
+    <head>
+        <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+        <script src="{{url_for('static', filename='js/vis.min.js')}}" type="text/javascript"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js" integrity="sha512-q/dWJ3kcmjBLU4Qc47E4A9kTB4m3wuTY7vkFJDTZKjTs8jhyGQnaUrxa0Ytd0ssMZhbNua9hE+E7Qv1j+DyZwA==" crossorigin="anonymous"></script>
+        <style>
+        #container {
+              width: 100%;
+              height: 100%;
+              top: 0;
+              left: 0;
+              position: absolute;
         }
-});
+        #network {
+              width: 100%;
+              height: 100%;
+              position: absolute;
+              top: 0;
+              left: 0;
+        }
+        #popup {
+              display:none;
+              position: absolute;
+              top: 0;
+              left: 0;
+              z-index: 10;
+        }
+        #from_id {
+            visibility: hidden;
+        }
 
-function onClick(event) {
-    window.console.log("clicked!");
-}
+        </style>
+    </head>
+    <body>
+        <div id="container">
+            <div id="network"></div>
+            <div id="popup">
+                <iframe name="dummyframe" id="dummyframe" style="display: none;"></iframe>
+                <form action="{{ url_for('addNode') }}" method="post" target="dummyframe">
+                  <input type="text" id="from_id" name="from_id"><br>
+                  <label for="label">New word:</label><br>
+                  <input type="text" id="label" name="label"><br><br>
+                  <input type="submit" value="Submit" id="add_node_submit">
+                </form>
+            </div>
+        </div>
 
-s.bind('overNode', function(e) {
-    e.data.node.x = e.clientX
-    e.data.node.y = e.clientY
-    console.log(e.clientX,e.clientY)
-})
+        <script>
+            var nodes = new vis.DataSet({{nodes | tojson | safe}});
 
-s.startForceAtlas2();
-s.refresh();
-function sleep(ms) {
-  return new Promise(resolve => setTimeout(resolve, ms));
-}
-async function sleeper(){
-  await sleep(6000);
-  s.stopForceAtlas2();
-  s.refresh();
-}
-sleeper();
+            // create an array with edges
+            var edges = new vis.DataSet({{edges | tojson | safe}});
 
-</script>
-  <div>
-  <a class="col-md-offset-3 col-md-6 text-center"style="position:absolute;bottom:0;" href="/network-graph">
-    <span class="input-group-btn glyphicon glyphicon-search">
-      <button type="submit" id="submit" class="btn btn-success">
-        <span class="glyphicon glyphicon-search">Back!</span>
-      </button>
-    </span>
-  </a>
-  </div>
-<p style="position: absolute; top: 70%;left:100px;">
-	Blue: submission<br>Green: comments to submission<br>Light blue: comments to comments
-</p>
-<script src="{{url_for('static', filename='js/jquery.min.js')}}" type="text/javascript"></script>
-<script src="{{url_for('static', filename='js/bootstrap.min.js')}}" type="text/javascript"></script>
-<script src="{{url_for('static', filename='js/material.min.js')}}"></script>
-<!-- Control Center for Material Kit: activating the ripples, parallax effects, scripts from the example pages etc -->
-<script src="{{url_for('static', filename='js/material-kit.js')}}" type="text/javascript"></script>
+            // create a network
+            var container = document.getElementById("network");
+
+            var data = {
+              nodes: nodes,
+              edges: edges,
+            };
+            var options = {clickToUse: true,
+                           nodes: { font: { strokeWidth: 0 } },
+                           edges: { font: { strokeWidth: 0 } },
+                           physics: {
+                            enabled: true,
+                            solver: "forceAtlas2Based",
+                            stabilization: {
+                              enabled: false // This is here just to see what's going on from the very beginning.
+                            }
+                          }};
+            var network = new vis.Network(container, data, options);
+            var socket = io();
+
+            network.on('doubleClick', function(e) {
+                if(e.nodes.length != 0) {
+                    var form_container = document.getElementById("popup");
+                    form_container.style.left = e.event.center.x+"px";
+                    form_container.style.top = e.event.center.y+"px";
+                    form_container.style.display = 'block';
+                    var id_input = document.getElementById("from_id");
+                    id_input.value = e.nodes[0]
+                }
+            });
+
+            var theSubmitButton = document.getElementById('add_node_submit');
+            theSubmitButton.onclick = function() {
+                var form_div = document.getElementById('popup');
+                form_div.style.display = 'none';
+            }
+
+            socket.on('newNode', function(node) {
+                network.body.data.nodes.add(node)
+            });
+            socket.on('newEdge', function(edge) {
+                network.body.data.edges.add(edge)
+            });
+            socket.on('updateEdge', function(edge) {
+               edges.update({id: edge.id, label: edge.label});
+            });
+        </script>
+    </body>
 </html>
