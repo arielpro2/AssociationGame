@@ -8,6 +8,7 @@ from flask_limiter.util import get_remote_address
 from flask_caching import Cache
 from flask_socketio import SocketIO
 
+
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = f'postgresql://{os.environ["POSTGRES_USER"]}:{os.environ["POSTGRES_PASS"]}@<{os.environ["POSTGRES_HOST"]}:{os.environ["POSTGRES_PORT"]}>/db'
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
