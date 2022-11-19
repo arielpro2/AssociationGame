@@ -84,7 +84,7 @@ def initializeCache():
     cache.set('nodes', network['nodes'])
     cache.set('edges', network['edges'])
     cache.set('label2id', network['label2id'])
-    scheduler.add_job(func=updateSqlFromCache, trigger="interval", seconds=30)
+    scheduler.add_job(func=updateSqlFromCache, trigger="interval", seconds=60)
     scheduler.start()
 
 #Pages
@@ -167,6 +167,6 @@ def addNode():
 
 
 if __name__ == '__main__':
-    socketio.run(app, debug=os.environ['DEBUG'] == 'True', use_reloader=False, allow_unsafe_werkzeug=True)
+    socketio.run(app, debug=os.environ['DEBUG'] == 'True')
 
 
