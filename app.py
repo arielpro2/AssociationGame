@@ -1,6 +1,5 @@
 import json
 import os
-import enchant
 from apscheduler.schedulers.background import BackgroundScheduler
 from flask import Flask, render_template, request
 from flask_sqlalchemy import SQLAlchemy
@@ -10,7 +9,7 @@ from flask_caching import Cache
 from flask_socketio import SocketIO
 
 app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = f'postgresql://{os.environ["POSTGRES_USER"]}:{os.environ["POSTGRES_PASS"]}@{os.environ["POSTGRES_HOST"]}/db'
+app.config['SQLALCHEMY_DATABASE_URI'] = f'postgresql://{os.environ["POSTGRES_USER"]}:{os.environ["POSTGRES_PASS"]}@<{os.environ["POSTGRES_HOST"]}:{os.environ["POSTGRES_PORT"]}>/db'
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 app.config['CACHE_TYPE'] = 'SimpleCache'
 app.config['CACHE_DEFAULT_TIMEOUT'] = 0
@@ -45,13 +44,10 @@ class edgesTable(db.Model):
         self.to_id = to_id
         self.votes = votes
 
-d = enchant.Dict("en_US")
 def validate_label(label):
     if len(label.split(' ')) > 1:
         return False
     if not label[0].isupper() or not label[1:].islower():
-        return False
-    if not d.check(label):
         return False
     return True
 
