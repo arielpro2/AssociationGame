@@ -170,6 +170,6 @@ def addNode():
 
 
 if __name__ == '__main__':
-    socketio.run(app, debug=os.environ['DEBUG'] == 'True',host=os.environ['FLASK_HOST'],port=int(os.environ['FLASK_PORT']), use_reloader=False, allow_unsafe_werkzeug=True)
+    socketio.run(app, debug=os.environ['DEBUG'] == 'True', use_reloader=False, allow_unsafe_werkzeug=True)
 
 
