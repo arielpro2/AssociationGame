@@ -1,10 +1,10 @@
 cd /root/AssociationGame
 python3 -m virtualenv venv
-PYTHONUNBUFFERED=1
-DEBUG=True
-FLASK_SECRETKEY=dev
-POSTGRES_HOSTlocalhost
-POSTGRES_PASS=arieljan04
-POSTGRES_PORT=5432
-POSTGRES_USER=postgres
+export PYTHONUNBUFFERED=1
+export DEBUG=True
+export FLASK_SECRETKEY=dev
+export POSTGRES_HOSTlocalhost
+export POSTGRES_PASS=arieljan04
+export POSTGRES_PORT=5432
+export POSTGRES_USER=postgres
 gunicorn --worker-class eventlet -w 3 app:app
