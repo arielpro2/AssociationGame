@@ -1,3 +1,5 @@
+cd /root/AssociationGame
+python3 -m virtualenv venv
 PYTHONUNBUFFERED=1
 DEBUG=True
 FLASK_SECRETKEY=dev
