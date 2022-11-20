@@ -168,7 +168,7 @@ def addNode():
 
 if __name__ == '__main__':
     try:
-        socketio.run(app, debug=os.environ['DEBUG'] == 'True', ssl_context='adhoc',pingInterval = 10000, pingTimeout= 5000)
+        socketio.run(app, debug=os.environ['DEBUG'] == 'True', ssl_context='adhoc',ping_interval = 10000, ping_timeout= 5000)
     except socket.error as socketerror:
         print("Error: ", socketerror)
 
