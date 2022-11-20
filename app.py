@@ -105,7 +105,7 @@ def getNetwork():
 
 #@limiter.limit("10/minute")
 @app.route('/api/addNode', methods=['POST'])
-def addNode():
+async def addNode():
     label = request.form["label"]
     from_id = request.form["from_id"]
 
@@ -132,7 +132,7 @@ def addNode():
     if label not in temp_label2id:
         to_id = cache.get('nodeCount')
         temp_nodes[str(to_id)] = {'id': str(to_id), 'label':label}
-        socketio.emit('newNode', temp_nodes[str(to_id)])
+        await socketio.emit('newNode', temp_nodes[str(to_id)])
         cache.set('nodeCount', to_id+1)
         cache.set('nodes', temp_nodes)
         temp_label2id[label] = str(to_id)
@@ -146,13 +146,13 @@ def addNode():
         temp_edge = temp_edges[f'{min(int(from_id),int(to_id))}-{max(int(from_id),int(to_id))}']
         temp_edge['label'] = str(int(temp_edge['label'])+1)
         temp_edges[f'{min(from_id,to_id)}-{max(from_id,to_id)}'] = temp_edge
-        socketio.emit('updateEdge', temp_edge)
+        await socketio.emit('updateEdge', temp_edge)
         cache.set('edges', temp_edges)
     else:
         #New edge
         edge_id = cache.get('edgeCount')
         temp_edges[f'{min(int(from_id),int(to_id))}-{max(int(from_id),int(to_id))}'] = {'id': edge_id, 'from': from_id, 'to':to_id, 'label':'1'}
-        socketio.emit('newEdge', temp_edges[f'{min(int(from_id),int(to_id))}-{max(int(from_id),int(to_id))}'])
+        await socketio.emit('newEdge', temp_edges[f'{min(int(from_id),int(to_id))}-{max(int(from_id),int(to_id))}'])
         cache.set('edgeCount', edge_id + 1)
         cache.set('edges', temp_edges)
 
