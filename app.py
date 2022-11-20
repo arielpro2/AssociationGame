@@ -167,6 +167,6 @@ def addNode():
 
 
 if __name__ == '__main__':
-    socketio.run(app, debug=os.environ['DEBUG'] == 'True')
+    socketio.run(app, debug=os.environ['DEBUG'] == 'True', ssl_context='adhoc')
 
 
