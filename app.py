@@ -132,7 +132,7 @@ async def addNode():
     if label not in temp_label2id:
         to_id = cache.get('nodeCount')
         temp_nodes[str(to_id)] = {'id': str(to_id), 'label':label}
-        await socketio.emit('newNode', temp_nodes[str(to_id)])
+        socketio.emit('newNode', temp_nodes[str(to_id)])
         cache.set('nodeCount', to_id+1)
         cache.set('nodes', temp_nodes)
         temp_label2id[label] = str(to_id)
@@ -146,13 +146,13 @@ async def addNode():
         temp_edge = temp_edges[f'{min(int(from_id),int(to_id))}-{max(int(from_id),int(to_id))}']
         temp_edge['label'] = str(int(temp_edge['label'])+1)
         temp_edges[f'{min(from_id,to_id)}-{max(from_id,to_id)}'] = temp_edge
-        await socketio.emit('updateEdge', temp_edge)
+        socketio.emit('updateEdge', temp_edge)
         cache.set('edges', temp_edges)
     else:
         #New edge
         edge_id = cache.get('edgeCount')
         temp_edges[f'{min(int(from_id),int(to_id))}-{max(int(from_id),int(to_id))}'] = {'id': edge_id, 'from': from_id, 'to':to_id, 'label':'1'}
-        await socketio.emit('newEdge', temp_edges[f'{min(int(from_id),int(to_id))}-{max(int(from_id),int(to_id))}'])
+        socketio.emit('newEdge', temp_edges[f'{min(int(from_id),int(to_id))}-{max(int(from_id),int(to_id))}'])
         cache.set('edgeCount', edge_id + 1)
         cache.set('edges', temp_edges)
 
@@ -168,7 +168,7 @@ async def addNode():
 
 if __name__ == '__main__':
     try:
-        socketio.run(app, debug=os.environ['DEBUG'] == 'True', ssl_context='adhoc',ping_interval = 10000, ping_timeout= 5000)
+        socketio.run(app, debug=os.environ['DEBUG'] == 'True',host='0.0.0.0', ssl_context='adhoc',ping_interval = 10000, ping_timeout= 5000)
     except socket.error as socketerror:
         print("Error: ", socketerror)
 
