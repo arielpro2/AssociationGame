@@ -135,7 +135,7 @@ def getConnected(from_id=None):
     return {'edges':[], 'nodes':[]}
 
 @app.route('/api/addNode', methods=['POST'])
-def addNode():
+async def addNode():
     label = request.form["label"]
     from_id = request.form["from_id"]
 
@@ -219,6 +219,9 @@ def addNode():
 
 
 if __name__ == '__main__':
-    socketio.run(app, debug=os.environ['DEBUG'] == 'True')
+    try:
+        socketio.run(app, debug=os.environ['DEBUG'] == 'True',host='0.0.0.0', ssl_context='adhoc',ping_interval = 10000, ping_timeout= 5000)
+    except socket.error as socketerror:
+        print("Error: ", socketerror)
 
 
