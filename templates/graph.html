@@ -187,8 +187,9 @@
             }
 
 
-
-            filterNetwork();
+            if(nodes.length != 1){
+                filterNetwork();
+            }
             var socket = io();
 
 

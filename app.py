@@ -109,7 +109,8 @@ def Graph():
     connected = getConnected('0')
     node_result = [nodes['0']]
     node_result[0]['color'] = 'orange'
-    node_result += connected['nodes']
+    if len(connected['nodes']) != 0:
+        node_result += connected['nodes']
     return render_template('graph.html', nodes=node_result, edges=connected['edges'])
 
 
@@ -135,7 +136,7 @@ def getConnected(from_id=None):
     return {'edges':[], 'nodes':[]}
 
 @app.route('/api/addNode', methods=['POST'])
-async def addNode():
+def addNode():
     label = request.form["label"]
     from_id = request.form["from_id"]
 
@@ -219,7 +220,7 @@ async def addNode():
 
 
 if __name__ == '__main__':
-    socketio.run(app, debug=os.environ['DEBUG'] == 'True',host='0.0.0.0')
+    socketio.run(app, debug=os.environ['DEBUG'] == 'True')
 
 
 
