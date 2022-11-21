@@ -219,7 +219,7 @@ async def addNode():
 
 
 if __name__ == '__main__':
-    socketio.run(app, debug=os.environ['DEBUG'] == 'True',host='0.0.0.0', ssl_context='adhoc',ping_interval = 10000, ping_timeout= 5000)
+    socketio.run(app, debug=os.environ['DEBUG'] == 'True',host='0.0.0.0')
 
 
 
