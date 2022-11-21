@@ -19,12 +19,28 @@
               top: 0;
               left: 0;
         }
-        #popup {
+        #addNodeContainer {
               display:none;
               position: absolute;
               top: 0;
               left: 0;
+              z-index: 9;
+        }
+        #nodeStatsContainer {
+              position: absolute;
+              top: 0;
+              left: 0;
               z-index: 10;
+        }
+        #nodeStatsTable {
+            border-collapse: collapse;
+            width: 100%;
+        }
+        td,
+        th {
+            border: 1px solid #000000;
+            text-align: left;
+            padding: 8px;
         }
         #from_id {
             visibility: hidden;
@@ -35,14 +51,22 @@
     <body>
         <div id="container">
             <div id="network"></div>
-            <div id="popup">
+            <div id="addNodeContainer">
                 <iframe name="dummyframe" id="dummyframe" style="display: none;"></iframe>
-                <form action="{{ url_for('addNode') }}" method="post" target="dummyframe">
+                <form target="dummyframe" id="addNodeForm">
                   <input type="text" id="from_id" name="from_id"><br>
                   <label for="label">New word:</label><br>
                   <input type="text" id="label" name="label"><br><br>
-                  <input type="submit" value="Submit" id="add_node_submit">
+                  <input type='Submit' onclick='document.forms["addNodeForm"].submit();' id="add_node_submit">
                 </form>
+            </div>
+            <div id="nodeStatsContainer">
+                <table id="nodeStatsTable">
+                    <tr>
+                        <th>Word</th>
+                        <th>Votes</th>
+                    </tr>
+                </table>
             </div>
         </div>
 
@@ -59,6 +83,7 @@
               nodes: nodes,
               edges: edges,
             };
+
             var options = {clickToUse: true,
                            nodes: { font: { strokeWidth: 0 } },
                            edges: { font: { strokeWidth: 0 } },
@@ -70,34 +95,184 @@
                             }
                           }};
             var network = new vis.Network(container, data, options);
+
+            var selectedNode = '';
+            function compare( a, b ) {
+                  if ( parseInt(a.label) < parseInt(b.label) ){
+                    return 1;
+                  }
+                  if ( parseInt(a.label) > parseInt(b.label) ){
+                    return -1;
+                  }
+                  return 0;
+            }
+            function updateNodeStats(){
+                const nodeStatsDiv = document.getElementById("nodeStatsContainer");
+                const nodeStatsTable = document.getElementById("nodeStatsTable");
+                while (nodeStatsTable.childNodes.length > 2) {
+                    nodeStatsTable.removeChild(nodeStatsTable.lastChild);
+                }
+
+                fetch('{{ url_for('getConnected') }}?from_id='+selectedNode)
+                   .then((response) => response.json())
+                   .then((data) => {
+                    var connectedEdges = data.edges;
+                    var temp_node_set = new vis.DataSet(data.nodes);
+                    connectedEdges.sort(compare);
+                    var redRows = [];
+                    connectedEdges.forEach((edge) => {
+                        let newRow = document.createElement("tr");
+                        let WordCell = document.createElement("td");
+                        let VotesCell = document.createElement("td");
+                        if (selectedNode == edge.to){
+                            WordCell.innerText = temp_node_set.get(edge.from).label;
+                        }else{
+                            WordCell.innerText = temp_node_set.get(edge.to).label;
+                        }
+                        VotesCell.innerText = edge.label;
+                        newRow.appendChild(WordCell);
+                        newRow.appendChild(VotesCell);
+                        if(edges.get(edge.id) == null){
+                            WordCell.style.backgroundColor="red";
+                            VotesCell.style.backgroundColor="red";
+                            redRows.push(newRow);
+                        }else{
+                            nodeStatsTable.appendChild(newRow);
+                        }
+                    });
+                    redRows.forEach((row) => {
+                        console.log('test');
+                        nodeStatsTable.appendChild(row);
+                    });
+                });
+
+            }
+            function filterNetwork(){
+                nodes.forEach(function(node) {
+                    var connectedEdges = edges.get(network.getConnectedEdges(node.id));
+                    connectedEdges.sort(compare);
+                    if (connectedEdges.length > 5){
+                        for (let i=5; i < connectedEdges.length; i++){
+                            edges.remove(connectedEdges[i].id)
+                        }
+                    }
+                });
+                nodes.forEach(function(node) {
+                    var connectedEdges = edges.get(network.getConnectedEdges(node.id));
+                    if (connectedEdges.length == 0){
+                        nodes.remove(node.id);
+                    }
+                });
+            }
+            function expandNetwork(node, brute){
+                var connected;
+                if (nodes.get(node).color != 'orange' || brute){
+                fetch('{{ url_for('getConnected') }}?from_id='+node)
+                   .then((response) => response.json())
+                   .then((data) => {
+                    connected = data;
+                    newNodes = connected.nodes;
+                    newEdges = connected.edges;
+                    newNodes.forEach(function(node) {
+                        nodes.update(node);
+                    });
+                    newEdges.forEach(function(edge) {
+                        edges.update(edge);
+                    });
+                    filterNetwork();
+                   });
+
+
+                }
+            }
+
+
+
+            filterNetwork();
             var socket = io();
+
 
             network.on('doubleClick', function(e) {
                 if(e.nodes.length != 0) {
-                    var form_container = document.getElementById("popup");
+                    var form_container = document.getElementById("addNodeContainer");
                     form_container.style.left = e.event.center.x+"px";
                     form_container.style.top = e.event.center.y+"px";
                     form_container.style.display = 'block';
                     var id_input = document.getElementById("from_id");
-                    id_input.value = e.nodes[0]
+                    id_input.value = e.nodes[0];
+                    selectedNode = e.nodes[0];
+                    expandNetwork(selectedNode, false);
+                }
+            });
+
+            network.on('click', function(e) {
+                if(e.nodes.length != 0) {
+                    selectedNode = e.nodes[0].toString();
+                    temp_node = nodes.get(selectedNode);
+                    expandNetwork(selectedNode,false);
+                    temp_node.color = 'orange';
+                    nodes.update(temp_node);
+                    updateNodeStats()
                 }
             });
 
             var theSubmitButton = document.getElementById('add_node_submit');
             theSubmitButton.onclick = function() {
-                var form_div = document.getElementById('popup');
-                form_div.style.display = 'none';
-            }
+                var from_id_value = document.getElementById('from_id').value;
+                var label_value = document.getElementById('label').value;
+                var form_div = document.getElementById('addNodeContainer');
+                form_div.style.display = 'none'
+                const urlEncodedDataPairs = [];
+                const XHR = new XMLHttpRequest();
 
-            socket.on('newNode', function(node) {
-                network.body.data.nodes.add(node)
+                for (const [name, value] of Object.entries({from_id:from_id_value,label:label_value})) {
+                   urlEncodedDataPairs.push(`${encodeURIComponent(name)}=${encodeURIComponent(value)}`);
+                }
+
+                const urlEncodedData = urlEncodedDataPairs.join('&').replace(/%20/g, '+');
+
+                XHR.addEventListener('load', (event) => {
+                   if (event.target.responseText != 'Success'){
+                        alert(event.target.responseText)
+                   }
+                });
+                XHR.open('POST', '{{ url_for('addNode') }}');
+                XHR.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+                XHR.send(urlEncodedData);
+
+            }
+            socket.on('newConnection', function(message) {
+                edge = message.edge
+                    id = edge.id
+                    from_id = edge.from
+                    to_id = edge.to
+                    existing_edge = edges.get(id)
+                    if (existing_edge == null){
+                        if (nodes.get(from_id) != null){
+                            if (nodes.get(from_id).color == 'orange'){
+                                if (message.hasOwnProperty('node')){
+                                    nodes.add(message.node);
+                                }
+                                edges.add(edge);
+                                expandNetwork(from_id, true);
+                            }
+                        }
+                        if (nodes.get(to_id) != null){
+                            if (nodes.get(to_id).color == 'orange'){
+                                if (message.hasOwnProperty('node')){
+                                    nodes.add(message.node);
+                                }
+                                edges.add(edge);
+                                expandNetwork(to_id, true);
+                            }
+                        }
+                    }else{
+                        edges.update(edge);
+                    }
+                updateNodeStats();
             });
-            socket.on('newEdge', function(edge) {
-                network.body.data.edges.add(edge)
-            });
-            socket.on('updateEdge', function(edge) {
-               edges.update({id: edge.id, label: edge.label});
-            });
+
+
         </script>
     </body>
 </html>
