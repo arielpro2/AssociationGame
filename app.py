@@ -220,7 +220,7 @@ def addNode():
 
 
 if __name__ == '__main__':
-    socketio.run(app, debug=os.environ['DEBUG'] == 'True')
+    socketio.run(app, debug=os.environ['DEBUG'] == 'True', host='0.0.0.0')
 
 
 
