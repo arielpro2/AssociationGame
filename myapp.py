@@ -186,7 +186,7 @@ def addNode():
     else:
         #New edge
         edge_id = cache.get('edgeCount')
-        temp_edge = {'id': edge_id, 'from': from_id, 'to':str(to_id), 'label':'1'}
+        temp_edge = {'id': edge_id, 'from': str(min(int(from_id),int(to_id))), 'to':str(max(int(from_id),int(to_id))), 'label':'1'}
         temp_edges[f'{min(int(from_id),int(to_id))}-{max(int(from_id),int(to_id))}'] = temp_edge
 
         if str(from_id) not in temp_nodeConnections:
