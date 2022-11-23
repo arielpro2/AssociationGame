@@ -155,7 +155,7 @@ def addNode():
     if not validate_label(label) or not validate_label(from_label):
         return 'Incorrect label format'
 
-    user_cache = cache.get(request.remote_addr)
+    user_cache = cache.get(request.access_route[-1])
     if user_cache:
         if {'from_label': from_label, 'label': label} in user_cache or {'from_label': label, 'label':from_label } in user_cache:
             return 'Already Requested'
@@ -202,12 +202,12 @@ def addNode():
         cache.set('edgeCount', edge_id + 1)
         cache.set('edges', temp_edges)
 
-    if cache.get(request.remote_addr):
+    if cache.get(request.access_route[-1]):
         request_list = cache.get(request.remote_addr)
         request_list.append({'from_label':from_label, 'label':label})
-        cache.set(request.remote_addr, request_list)
+        cache.set(request.access_route[-1], request_list)
     else:
-        cache.set(request.remote_addr, [{'from_label':from_label, 'label':label}])
+        cache.set(request.access_route[-1], [{'from_label':from_label, 'label':label}])
 
     socket_messege = {}
     if temp_node:
